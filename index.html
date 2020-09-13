@@ -4,10 +4,175 @@
     <meta charset="UTF-8">
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta http-equiv="0-UA-Compatible" content="ie=edge">
     <title>Tetris</title>
+    <style>
+        html{
+            height: 100%;
+        }
+        body{
+            color: #eee;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .border{
+            color: transparent;
+            background-color: gray;
+        }
+        td{
+            width: 20px;
+            height: 20px;
+            user-select: none;
+        }
+    </style>
 </head>
 <body>
-
+<table id="stage"></table>
 </body>
+<script>
+
+    class Tetris {
+        /** Stage **/
+        constructor(){
+            this.stage = document.getElementById("stage");
+            this.colNum = 20;
+            this.rowNum = 30;
+
+            this.setStage();
+
+            /** KeyMap **/
+            window.addEventListener('keydown', (event)=>{
+                const key = event.keyCode;
+                event.preventDefault();
+                switch (key){
+                    case 38 :
+                        this.rotate();
+                        break;
+
+                    case 37 :
+                        this.goLeft();
+                        break;
+
+                    case 39 :
+                        this.goRight();
+                        break;
+
+                    case 40 :
+                        this.goDown();
+                        break;
+                }
+            })
+        }
+
+        setStage = () => {
+            const {rowNum, colNum} = this;
+            let cells = "";
+            for (let i = 0; i < rowNum; i++) {
+                cells += "<tr>";
+                for (let j = 0; j < colNum; j++) {
+                    let val = 0;
+                    let className = "";
+                    const isFirstCol = j === 0;
+                    const isLastCol = j === colNum -1;
+                    const isLastRow = i === rowNum - 1;
+                    if (isFirstCol || isLastCol || isLastRow) {
+                        val = 1;
+                        className = "border";
+                    }
+                    cells += `<td class="${className}">${val}</td>`;
+                }
+                cells += "</tr>";
+            }
+            this.stage.innerHTML = cells;
+        };
+
+        /** Shapes **/
+
+        shapeDefs = {
+            "T" : [
+                [1,1,1],
+                [0,1,0],
+                [0,1,0],
+            ],
+            "I" : [
+                [0,0,1,0,],
+                [0,0,1,0,],
+                [0,0,1,0,],
+                [0,0,1,0,],
+            ],
+            "M" : [
+                [1,1],
+                [1,1]
+            ],
+            "Z" : [
+                [1,1,0],
+                [0,1,0],
+                [0,1,1],
+            ],
+            "S" : [
+                [0,1,1],
+                [0,1,0],
+                [1,1,0]
+            ],
+            "L" : [
+                [0,1,0],
+                [0,1,0],
+                [0,1,1],
+            ],
+            "LR" : [
+                [0,1,0],
+                [0,1,0],
+                [1,1,0],
+            ],
+        };
+
+        /** Move **/
+        goDown = () => {
+            console.log('Down'); // rotate
+        };
+
+        goLeft = () => {
+            console.log('Left'); // rotate
+        };
+
+        goRight = () => {
+            console.log('Right'); // rotate
+        };
+
+        rotate = ()=> {
+            console.log('Up'); // rotate
+        };
+
+        isRotatable = () => {
+
+        };
+
+        move = () => {
+            const currPosition = [];
+            const expectPosition = [];
+        };
+
+        show = () => {
+
+        };
+
+        settle = () => {
+
+        };
+
+        getTargetBox = (posX, posY, size) => {
+            return [
+                [0, 0, 1],
+                [0, 0, 1],
+                [0, 1, 1],
+            ]
+        }
+
+    }
+
+    new Tetris();
+
+</script>
 </html>
