@@ -7,24 +7,32 @@
     <meta http-equiv="0-UA-Compatible" content="ie=edge">
     <title>Tetris</title>
     <style>
-        html{
+        html {
             height: 100%;
         }
-        body{
-            color: #eee;
+
+        body {
+            color: #ccc;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100%;
         }
-        .border{
+
+        .border {
             color: transparent;
             background-color: gray;
         }
-        td{
+
+        td {
             width: 20px;
             height: 20px;
             user-select: none;
+            text-align: center;
+        }
+
+        .moving-box {
+            background-color: #eee;
         }
     </style>
 </head>
@@ -35,18 +43,20 @@
 
     class Tetris {
         /** Stage **/
-        constructor(){
+        constructor() {
             this.stage = document.getElementById("stage");
             this.colNum = 20;
             this.rowNum = 30;
 
             this.setStage();
+            this.movingBox = this.initTargetBox(2, 5, 3);
+            this.render();
 
             /** KeyMap **/
-            window.addEventListener('keydown', (event)=>{
+            window.addEventListener('keydown', (event) => {
                 const key = event.keyCode;
                 event.preventDefault();
-                switch (key){
+                switch (key) {
                     case 38 :
                         this.rotate();
                         break;
@@ -63,7 +73,8 @@
                         this.goDown();
                         break;
                 }
-            })
+            });
+
         }
 
         setStage = () => {
@@ -75,13 +86,15 @@
                     let val = 0;
                     let className = "";
                     const isFirstCol = j === 0;
-                    const isLastCol = j === colNum -1;
+                    const isLastCol = j === colNum - 1;
                     const isLastRow = i === rowNum - 1;
                     if (isFirstCol || isLastCol || isLastRow) {
                         val = 1;
                         className = "border";
+                    }else{
+                        className = "cell";
                     }
-                    cells += `<td class="${className}">${val}</td>`;
+                    cells += `<td class="${className}" data-pos="${i}-${j}">${val}</td>`;
                 }
                 cells += "</tr>";
             }
@@ -91,40 +104,40 @@
         /** Shapes **/
 
         shapeDefs = {
-            "T" : [
-                [1,1,1],
-                [0,1,0],
-                [0,1,0],
+            "T": [
+                [1, 1, 1],
+                [0, 1, 0],
+                [0, 1, 0],
             ],
-            "I" : [
-                [0,0,1,0,],
-                [0,0,1,0,],
-                [0,0,1,0,],
-                [0,0,1,0,],
+            "I": [
+                [0, 0, 1, 0],
+                [0, 0, 1, 0],
+                [0, 0, 1, 0],
+                [0, 0, 1, 0],
             ],
-            "M" : [
-                [1,1],
-                [1,1]
+            "M": [
+                [1, 1],
+                [1, 1]
             ],
-            "Z" : [
-                [1,1,0],
-                [0,1,0],
-                [0,1,1],
+            "Z": [
+                [1, 1, 0],
+                [0, 1, 0],
+                [0, 1, 1],
             ],
-            "S" : [
-                [0,1,1],
-                [0,1,0],
-                [1,1,0]
+            "S": [
+                [0, 1, 1],
+                [0, 1, 0],
+                [1, 1, 0]
             ],
-            "L" : [
-                [0,1,0],
-                [0,1,0],
-                [0,1,1],
+            "L": [
+                [0, 1, 0],
+                [0, 1, 0],
+                [0, 1, 1],
             ],
-            "LR" : [
-                [0,1,0],
-                [0,1,0],
-                [1,1,0],
+            "LR": [
+                [0, 1, 0],
+                [0, 1, 0],
+                [1, 1, 0],
             ],
         };
 
@@ -138,10 +151,25 @@
         };
 
         goRight = () => {
+            console.log(this.movingBox);
+            const moved = this.movingBox.map(box => [box[0], box[1]+1]);
+            const leftLineNum = this.movingBox[0][1];
+            const leftLineBoxes = this.movingBox.filter(box => box[1] === leftLineNum);
+            this.removeTrace(leftLineBoxes);
+            this.movingBox = moved;
+            console.log(this.movingBox);
+            this.render();
             console.log('Right'); // rotate
         };
 
-        rotate = ()=> {
+        removeTrace = (arr) => {
+            arr.forEach((pos)=>{
+                const target = document.querySelector(`[data-pos="${pos[0]}-${pos[1]}"]`);
+                target.classList.remove("moving-box");
+            })
+        }
+
+        rotate = () => {
             console.log('Up'); // rotate
         };
 
@@ -162,12 +190,25 @@
 
         };
 
-        getTargetBox = (posX, posY, size) => {
-            return [
-                [0, 0, 1],
-                [0, 0, 1],
-                [0, 1, 1],
-            ]
+        initTargetBox = (posX, posY, size) => {
+            const posSet = [];
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    posSet.push([i+posX, j+posY])
+                }
+            }
+            return posSet;
+        };
+
+        render = () => {
+//            const cells = document.querySelectorAll(".cell");
+//            for(const cell of cells){
+//                console.log(cell);
+//            }
+            this.movingBox.forEach((pos) => {
+                const target = document.querySelector(`[data-pos="${pos[0]}-${pos[1]}"]`);
+                target.classList.add("moving-box");
+            });
         }
 
     }
