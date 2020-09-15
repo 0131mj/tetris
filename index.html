@@ -34,10 +34,19 @@
         .moving-box {
             background-color: #eee;
         }
+
+        #log {
+            background-color: black;
+            position: fixed;
+            right: 0;
+            top: 0;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
 <table id="stage"></table>
+<div id="log"></div>
 </body>
 <script>
 
@@ -48,9 +57,49 @@
             this.colNum = 20;
             this.rowNum = 30;
 
+            /** Shapes **/
+            this.shapeDefs = {
+                T: [
+                    [1, 1, 1],
+                    [0, 1, 0],
+                    [0, 1, 0],
+                ],
+                I: [
+                    [0, 0, 1, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 1, 0],
+                ],
+                M: [
+                    [1, 1],
+                    [1, 1]
+                ],
+                Z: [
+                    [1, 1, 0],
+                    [0, 1, 0],
+                    [0, 1, 1],
+                ],
+                S: [
+                    [0, 1, 1],
+                    [0, 1, 0],
+                    [1, 1, 0]
+                ],
+                L: [
+                    [0, 1, 0],
+                    [0, 1, 0],
+                    [0, 1, 1],
+                ],
+                LR: [
+                    [0, 1, 0],
+                    [0, 1, 0],
+                    [1, 1, 0],
+                ],
+            };
+
             this.setStage();
             this.movingBox = this.initTargetBox(2, 5, 3);
             this.render();
+            this.loadShape(this.shapeDefs.T);
 
             /** KeyMap **/
             window.addEventListener('keydown', (event) => {
@@ -74,7 +123,10 @@
                         break;
                 }
             });
+        }
 
+        log = (msg) => {
+            document.getElementById("log").innerHTML += `${msg}<br/>`;
         }
 
         setStage = () => {
@@ -91,7 +143,7 @@
                     if (isFirstCol || isLastCol || isLastRow) {
                         val = 1;
                         className = "border";
-                    }else{
+                    } else {
                         className = "cell";
                     }
                     cells += `<td class="${className}" data-pos="${i}-${j}">${val}</td>`;
@@ -99,46 +151,6 @@
                 cells += "</tr>";
             }
             this.stage.innerHTML = cells;
-        };
-
-        /** Shapes **/
-
-        shapeDefs = {
-            "T": [
-                [1, 1, 1],
-                [0, 1, 0],
-                [0, 1, 0],
-            ],
-            "I": [
-                [0, 0, 1, 0],
-                [0, 0, 1, 0],
-                [0, 0, 1, 0],
-                [0, 0, 1, 0],
-            ],
-            "M": [
-                [1, 1],
-                [1, 1]
-            ],
-            "Z": [
-                [1, 1, 0],
-                [0, 1, 0],
-                [0, 1, 1],
-            ],
-            "S": [
-                [0, 1, 1],
-                [0, 1, 0],
-                [1, 1, 0]
-            ],
-            "L": [
-                [0, 1, 0],
-                [0, 1, 0],
-                [0, 1, 1],
-            ],
-            "LR": [
-                [0, 1, 0],
-                [0, 1, 0],
-                [1, 1, 0],
-            ],
         };
 
         /** Move **/
@@ -152,7 +164,7 @@
 
         goRight = () => {
             console.log(this.movingBox);
-            const moved = this.movingBox.map(box => [box[0], box[1]+1]);
+            const moved = this.movingBox.map(box => [box[0], box[1] + 1]);
             const leftLineNum = this.movingBox[0][1];
             const leftLineBoxes = this.movingBox.filter(box => box[1] === leftLineNum);
             this.removeTrace(leftLineBoxes);
@@ -163,11 +175,11 @@
         };
 
         removeTrace = (arr) => {
-            arr.forEach((pos)=>{
+            arr.forEach((pos) => {
                 const target = document.querySelector(`[data-pos="${pos[0]}-${pos[1]}"]`);
                 target.classList.remove("moving-box");
             })
-        }
+        };
 
         rotate = () => {
             console.log('Up'); // rotate
@@ -190,11 +202,21 @@
 
         };
 
+        loadShape = (shape) => {
+            const size = shape.length;
+            this.log(`size: ${size}`);
+            const rowIdx = 0;
+            const colIdx = Math.round((this.colNum - size) / 2);
+            this.log(colIdx);
+            const posSet = [[6,0], [6,0], [6,0]]
+
+        };
+
         initTargetBox = (posX, posY, size) => {
             const posSet = [];
             for (let i = 0; i < size; i++) {
                 for (let j = 0; j < size; j++) {
-                    posSet.push([i+posX, j+posY])
+                    posSet.push([i + posX, j + posY])
                 }
             }
             return posSet;
