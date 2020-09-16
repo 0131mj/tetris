@@ -42,6 +42,9 @@
             top: 0;
             padding: 10px;
             color: chartreuse;
+            width: 400px;
+            overflow: auto;
+            height: 100vh;
         }
     </style>
 </head>
@@ -51,7 +54,7 @@
 </body>
 <script>
     const log = (msg) => {
-        document.getElementById("log").innerHTML += `${JSON.stringify(msg)}<br/>`;
+        document.getElementById("log").innerHTML = `${JSON.stringify(msg)}<br/>`+document.getElementById("log").innerHTML;
     };
 
     class Tetris {
@@ -101,8 +104,8 @@
             };
 
             this.setStage();
-            this.movingBox = this.loadShape(this.shapeDefs.T);
-            this.renderLivingBox(this.movingBox);
+            this.livingCells = this.loadShape(this.shapeDefs.S);
+            this.renderLivingCells();
 
             /** KeyMap **/
             window.addEventListener('keydown', (event) => {
@@ -155,45 +158,28 @@
 
         /** Move **/
         goDown = () => {
-            console.log('Down'); // rotate
+            log('Down');
+            this.livingCells = this.livingCells.map(cell => [cell[0]+1, cell[1]]);
+            this.renderLivingCells();
         };
 
         goLeft = () => {
-            console.log('Left'); // rotate
+            log('Left');
+            this.livingCells = this.livingCells.map(cell => [cell[0], cell[1] - 1]);
+            this.renderLivingCells();
         };
 
         goRight = () => {
-            console.log(this.movingBox);
-            const moved = this.movingBox.map(box => [box[0], box[1] + 1]);
-            const leftLineNum = this.movingBox[0][1];
-            const leftLineBoxes = this.movingBox.filter(box => box[1] === leftLineNum);
-            this.removeTrace(leftLineBoxes);
-            this.movingBox = moved;
-            this.renderLivingBox(this.movingBox);
-            console.log('Right'); // rotate
-        };
-
-        removeTrace = (arr) => {
-            arr.forEach((pos) => {
-                const target = document.querySelector(`[data-pos="${pos[0]}-${pos[1]}"]`);
-                target.classList.remove("moving-box");
-            })
+            log('Right');
+            this.livingCells = this.livingCells.map(cell => [cell[0], cell[1] + 1]);
+            this.renderLivingCells();
         };
 
         rotate = () => {
-            console.log('Up'); // rotate
+            console.log('Up');
         };
 
         isRotatable = () => {
-
-        };
-
-        move = () => {
-            const currPosition = [];
-            const expectPosition = [];
-        };
-
-        show = () => {
 
         };
 
@@ -221,32 +207,20 @@
             return posSet;
         };
 
-        initTargetBox = (posX, posY, size) => {
-            const posSet = [];
-            for (let i = 0; i < size; i++) {
-                for (let j = 0; j < size; j++) {
-                    posSet.push([i + posX, j + posY])
+        renderLivingCells = () => {
+            const cells = document.querySelectorAll(".cell");
+
+            cells.forEach((cell)=>{
+                const filled = this.livingCells.some((box)=>
+                    cell.dataset["pos"] === `${box[0]}-${box[1]}`
+                );
+
+                if(filled){
+                    cell.classList.add("moving-box");
+                }else{
+                    cell.classList.remove("moving-box");
                 }
-            }
-            return posSet;
-        };
-
-        render = () => {
-//            const cells = document.querySelectorAll(".cell");
-//            for(const cell of cells){
-//                console.log(cell);
-//            }
-//            this.movingBox.forEach((pos) => {
-//                const target = document.querySelector(`[data-pos="${pos[0]}-${pos[1]}"]`);
-//                target.classList.add("moving-box");
-//            });
-        }
-
-        renderLivingBox = (posSet) => {
-            posSet.forEach(pos =>{
-                const target = document.querySelector(`[data-pos="${pos[0]}-${pos[1]}"]`);
-                target.classList.add("moving-box");
-            })
+            });
         }
 
     }
