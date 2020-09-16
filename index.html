@@ -25,8 +25,8 @@
         }
 
         td {
-            width: 20px;
-            height: 20px;
+            width: 45px;
+            height: 45px;
             user-select: none;
             text-align: center;
         }
@@ -41,6 +41,7 @@
             right: 0;
             top: 0;
             padding: 10px;
+            color: chartreuse;
         }
     </style>
 </head>
@@ -49,13 +50,16 @@
 <div id="log"></div>
 </body>
 <script>
+    const log = (msg) => {
+        document.getElementById("log").innerHTML += `${JSON.stringify(msg)}<br/>`;
+    };
 
     class Tetris {
         /** Stage **/
         constructor() {
             this.stage = document.getElementById("stage");
-            this.colNum = 20;
-            this.rowNum = 30;
+            this.colNum = 15;
+            this.rowNum = 15;
 
             /** Shapes **/
             this.shapeDefs = {
@@ -97,9 +101,8 @@
             };
 
             this.setStage();
-            this.movingBox = this.initTargetBox(2, 5, 3);
-            this.render();
-            this.loadShape(this.shapeDefs.T);
+            this.movingBox = this.loadShape(this.shapeDefs.T);
+            this.renderLivingBox(this.movingBox);
 
             /** KeyMap **/
             window.addEventListener('keydown', (event) => {
@@ -125,9 +128,6 @@
             });
         }
 
-        log = (msg) => {
-            document.getElementById("log").innerHTML += `${msg}<br/>`;
-        }
 
         setStage = () => {
             const {rowNum, colNum} = this;
@@ -146,7 +146,7 @@
                     } else {
                         className = "cell";
                     }
-                    cells += `<td class="${className}" data-pos="${i}-${j}">${val}</td>`;
+                    cells += `<td class="${className}" data-pos="${i}-${j}">${i}-${j}</td>`;
                 }
                 cells += "</tr>";
             }
@@ -169,8 +169,7 @@
             const leftLineBoxes = this.movingBox.filter(box => box[1] === leftLineNum);
             this.removeTrace(leftLineBoxes);
             this.movingBox = moved;
-            console.log(this.movingBox);
-            this.render();
+            this.renderLivingBox(this.movingBox);
             console.log('Right'); // rotate
         };
 
@@ -204,12 +203,22 @@
 
         loadShape = (shape) => {
             const size = shape.length;
-            this.log(`size: ${size}`);
+            log({size});
             const rowIdx = 0;
             const colIdx = Math.round((this.colNum - size) / 2);
-            this.log(colIdx);
-            const posSet = [[6,0], [6,0], [6,0]]
-
+            log({colIdx});
+            log({shape});
+            let posSet = [];
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    const isFilled = shape[i][j] === 1;
+                    if (isFilled) {
+                        posSet.push([i, j+colIdx]);
+                    }
+                }
+            }
+            log({posSet});
+            return posSet;
         };
 
         initTargetBox = (posX, posY, size) => {
@@ -227,10 +236,17 @@
 //            for(const cell of cells){
 //                console.log(cell);
 //            }
-            this.movingBox.forEach((pos) => {
+//            this.movingBox.forEach((pos) => {
+//                const target = document.querySelector(`[data-pos="${pos[0]}-${pos[1]}"]`);
+//                target.classList.add("moving-box");
+//            });
+        }
+
+        renderLivingBox = (posSet) => {
+            posSet.forEach(pos =>{
                 const target = document.querySelector(`[data-pos="${pos[0]}-${pos[1]}"]`);
                 target.classList.add("moving-box");
-            });
+            })
         }
 
     }
