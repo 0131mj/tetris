@@ -54,7 +54,7 @@
 </body>
 <script>
     const log = (msg) => {
-        document.getElementById("log").innerHTML = `${JSON.stringify(msg)}<br/>`+document.getElementById("log").innerHTML;
+        document.getElementById("log").innerHTML = `${JSON.stringify(msg)}<br/>` + document.getElementById("log").innerHTML;
     };
 
     class Tetris {
@@ -104,8 +104,8 @@
             };
 
             this.setStage();
-            this.livingCells = this.loadShape(this.shapeDefs.S);
-            this.renderLivingCells();
+            this.activeZone = this.loadActiveZone(this.shapeDefs.S);
+            this.renderActiveCells();
 
             /** KeyMap **/
             window.addEventListener('keydown', (event) => {
@@ -159,20 +159,44 @@
         /** Move **/
         goDown = () => {
             log('Down');
-            this.livingCells = this.livingCells.map(cell => [cell[0]+1, cell[1]]);
-            this.renderLivingCells();
+            this.activeZone = this.activeZone.map(cell => (
+                {
+                    pos: {
+                        row: cell.pos.row + 1,
+                        col: cell.pos.col,
+                    },
+                    isFilled: cell.isFilled
+                }
+            ));
+            this.renderActiveCells();
         };
 
         goLeft = () => {
             log('Left');
-            this.livingCells = this.livingCells.map(cell => [cell[0], cell[1] - 1]);
-            this.renderLivingCells();
+            this.activeZone = this.activeZone.map(cell => (
+                {
+                    pos: {
+                        row: cell.pos.row,
+                        col: cell.pos.col - 1,
+                    },
+                    isFilled: cell.isFilled
+                }
+            ));
+            this.renderActiveCells();
         };
 
         goRight = () => {
             log('Right');
-            this.livingCells = this.livingCells.map(cell => [cell[0], cell[1] + 1]);
-            this.renderLivingCells();
+            this.activeZone = this.activeZone.map(cell => (
+                {
+                    pos: {
+                        row: cell.pos.row,
+                        col: cell.pos.col + 1,
+                    },
+                    isFilled: cell.isFilled
+                }
+            ));
+            this.renderActiveCells();
         };
 
         rotate = () => {
@@ -187,10 +211,9 @@
 
         };
 
-        loadShape = (shape) => {
+        loadActiveZone = (shape) => {
             const size = shape.length;
             log({size});
-            const rowIdx = 0;
             const colIdx = Math.round((this.colNum - size) / 2);
             log({colIdx});
             log({shape});
@@ -198,26 +221,31 @@
             for (let i = 0; i < size; i++) {
                 for (let j = 0; j < size; j++) {
                     const isFilled = shape[i][j] === 1;
-                    if (isFilled) {
-                        posSet.push([i, j+colIdx]);
-                    }
+                    posSet.push(
+                        {
+                            pos: {
+                                row: i,
+                                col: j + colIdx
+                            },
+                            isFilled: isFilled
+                        }
+                    );
                 }
             }
             log({posSet});
             return posSet;
         };
 
-        renderLivingCells = () => {
+        renderActiveCells = () => {
             const cells = document.querySelectorAll(".cell");
-
-            cells.forEach((cell)=>{
-                const filled = this.livingCells.some((box)=>
-                    cell.dataset["pos"] === `${box[0]}-${box[1]}`
+            cells.forEach((cell) => {
+                const filled = this.activeZone.some((box) =>
+                    cell.dataset["pos"] === `${box.pos.row}-${box.pos.col}` && box.isFilled
                 );
 
-                if(filled){
+                if (filled) {
                     cell.classList.add("moving-box");
-                }else{
+                } else {
                     cell.classList.remove("moving-box");
                 }
             });
