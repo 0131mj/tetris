@@ -57,6 +57,45 @@
         document.getElementById("log").innerHTML = `${JSON.stringify(msg)}<br/>` + document.getElementById("log").innerHTML;
     };
 
+    /** Shapes **/
+    const models = {
+        T: [
+            [1, 1, 1],
+            [0, 1, 0],
+            [0, 1, 0],
+        ],
+        I: [
+            [0, 0, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 1, 0],
+            [0, 0, 1, 0],
+        ],
+        M: [
+            [1, 1],
+            [1, 1]
+        ],
+        Z: [
+            [1, 1, 0],
+            [0, 1, 0],
+            [0, 1, 1],
+        ],
+        S: [
+            [0, 1, 1],
+            [0, 1, 0],
+            [1, 1, 0]
+        ],
+        L: [
+            [0, 1, 0],
+            [0, 1, 0],
+            [0, 1, 1],
+        ],
+        LR: [
+            [0, 1, 0],
+            [0, 1, 0],
+            [1, 1, 0],
+        ],
+    };
+
     class Tetris {
         /** Stage **/
         constructor() {
@@ -64,48 +103,8 @@
             this.colNum = 15;
             this.rowNum = 15;
 
-            /** Shapes **/
-            this.models = {
-                T: [
-                    [1, 1, 1],
-                    [0, 1, 0],
-                    [0, 1, 0],
-                ],
-                I: [
-                    [0, 0, 1, 0],
-                    [0, 0, 1, 0],
-                    [0, 0, 1, 0],
-                    [0, 0, 1, 0],
-                ],
-                M: [
-                    [1, 1],
-                    [1, 1]
-                ],
-                Z: [
-                    [1, 1, 0],
-                    [0, 1, 0],
-                    [0, 1, 1],
-                ],
-                S: [
-                    [0, 1, 1],
-                    [0, 1, 0],
-                    [1, 1, 0]
-                ],
-                L: [
-                    [0, 1, 0],
-                    [0, 1, 0],
-                    [0, 1, 1],
-                ],
-                LR: [
-                    [0, 1, 0],
-                    [0, 1, 0],
-                    [1, 1, 0],
-                ],
-            };
-
             this.setStage();
-            this.activeZone = this.loadActiveZone(this.models.S);
-            this.renderActiveCells();
+            this.loadNewModel();
 
             /** KeyMap **/
             window.addEventListener('keydown', (event) => {
@@ -113,24 +112,23 @@
                 event.preventDefault();
                 switch (key) {
                     case 38 :
-                        this.rotate();
-                        break;
-
-                    case 37 :
-                        this.goLeft();
+                        this.rotateModel();
                         break;
 
                     case 39 :
-                        this.goRight();
+                        this.movePos("right");
+                        break;
+
+                    case 37 :
+                        this.movePos("left");
                         break;
 
                     case 40 :
-                        this.goDown();
+                        this.movePos("down");
                         break;
                 }
             });
         }
-
 
         setStage = () => {
             const {rowNum, colNum} = this;
@@ -156,92 +154,94 @@
             this.stage.innerHTML = cells;
         };
 
-        /** Move **/
-        goDown = () => {
-            log('Down');
-            this.activeZone = this.activeZone.map(cell => (
-                {
-                    pos: {
-                        row: cell.pos.row + 1,
-                        col: cell.pos.col,
-                    },
-                    isFilled: cell.isFilled
-                }
-            ));
-            this.renderActiveCells();
+        getInitialPos = () => {
+            const size = this.model.length;
+            const col = Math.round((this.colNum - size) / 2);
+            return ({
+                row: 0,
+                col,
+            });
         };
 
-        goLeft = () => {
-            log('Left');
-            this.activeZone = this.activeZone.map(cell => (
-                {
-                    pos: {
-                        row: cell.pos.row,
-                        col: cell.pos.col - 1,
-                    },
-                    isFilled: cell.isFilled
-                }
-            ));
-            this.renderActiveCells();
+        loadNewModel = () => {
+            this.model = JSON.parse(JSON.stringify(models.S));
+            this.pos = this.getInitialPos();
+            this.render();
         };
 
-        goRight = () => {
-            log('Right');
-            this.activeZone = this.activeZone.map(cell => (
-                {
-                    pos: {
-                        row: cell.pos.row,
-                        col: cell.pos.col + 1,
-                    },
-                    isFilled: cell.isFilled
-                }
-            ));
-            this.renderActiveCells();
+        movePos = (direction) => {
+
+            const currPos = this.pos;
+            let nextPos = {
+                row: this.pos.row,
+                col: this.pos.col
+            };
+            switch (direction) {
+                case "left":
+                    nextPos.col -= 1;
+                    break;
+
+                case "right":
+                    nextPos.col += 1;
+                    break;
+
+                case "down":
+                    nextPos.row += 1;
+                    break;
+            }
+
+            log({direction});
+            log({currPos});
+            log({nextPos});
+
+            // check movable;
+
+            this.pos = nextPos;
+            this.render();
+
         };
 
         /** Rotate Model **/
-        rotate = () => {
-            console.log('Up');
+        rotateModel = () => {
+            const isRotatable = () => {
+
+            };
+            log('Up');
         };
 
-
-        isRotatable = () => {
-
-        };
 
         settle = () => {
 
         };
 
-        loadActiveZone = (shape) => {
-            const size = shape.length;
+        loadActiveZone = () => {
+            const size = this.model.length;
             log({size});
-            const colIdx = Math.round((this.colNum - size) / 2);
-            log({colIdx});
-            log({shape});
-            let posSet = [];
+
+            let activeZone = [];
             for (let i = 0; i < size; i++) {
                 for (let j = 0; j < size; j++) {
-                    const isFilled = shape[i][j] === 1;
-                    posSet.push(
+                    const isFilled = this.model[i][j] === 1;
+                    activeZone.push(
                         {
                             pos: {
-                                row: i,
-                                col: j + colIdx
+                                row: i + this.pos.row,
+                                col: j + this.pos.col
                             },
                             isFilled: isFilled
                         }
                     );
                 }
             }
-            log({posSet});
-            return posSet;
+            return activeZone;
         };
 
-        renderActiveCells = () => {
+        render = () => {
+            log("----- render ------")
             const cells = document.querySelectorAll(".cell");
+            const activeZone = this.loadActiveZone();
             cells.forEach((cell) => {
-                const filled = this.activeZone.some((box) =>
+                const filled = activeZone.some((box) =>
                     cell.dataset["pos"] === `${box.pos.row}-${box.pos.col}` && box.isFilled
                 );
 
@@ -251,8 +251,7 @@
                     cell.classList.remove("moving-box");
                 }
             });
-        }
-
+        };
     }
 
     new Tetris();
