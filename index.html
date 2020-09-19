@@ -171,8 +171,7 @@
 
         movePos = (direction) => {
 
-            const currPos = this.pos;
-            let nextPos = {
+            const nextPos = {
                 row: this.pos.row,
                 col: this.pos.col
             };
@@ -191,7 +190,6 @@
             }
 
             log({direction});
-            log({currPos});
             log({nextPos});
 
             // check movable;
@@ -204,9 +202,26 @@
         /** Rotate Model **/
         rotateModel = () => {
             const isRotatable = () => {
-
+                return true;
             };
-            log('Up');
+
+            log(this.model);
+            const size = this.model.length;
+            const nextModel = [];
+            for (let i = 0; i < size; i++) {
+                nextModel[i] = [];
+            }
+            this.model.forEach((row, rowIdx) => {
+                row.forEach((col, colIdx) => {
+                    nextModel[colIdx][size - 1 - rowIdx] = col;
+                })
+            });
+
+
+            log({nextModel});
+            log('Rotate');
+            this.model = nextModel;
+            this.render();
         };
 
 
