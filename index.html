@@ -189,10 +189,17 @@
                     break;
             }
 
-            log({direction});
-            log({nextPos});
 
-            // check movable;
+            /** check movable **/
+            const size = this.model.length;
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    const cell = document.querySelector(`[data-pos="${nextPos.row + i}-${nextPos.col + j}"]`)
+                    if (cell.classList.contains("border")) {
+                        return;
+                    }
+                }
+            }
 
             this.pos = nextPos;
             this.render();
