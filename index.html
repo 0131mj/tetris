@@ -35,6 +35,10 @@
             background-color: #eee;
         }
 
+        .settled {
+            background-color: #999;
+        }
+
         #log {
             background-color: black;
             position: fixed;
@@ -103,9 +107,6 @@
             this.colNum = 15;
             this.rowNum = 15;
 
-            this.setStage();
-            this.loadNewModel();
-
             /** KeyMap **/
             window.addEventListener('keydown', (event) => {
                 const key = event.keyCode;
@@ -129,6 +130,15 @@
                 }
             });
         }
+
+        start = () => {
+            this.setStage();
+            this.loadNewModel();
+            this.cnt = 0;
+//            const setCnt = window.setInterval(() => {
+//                this.movePos("down")
+//            }, 300)
+        };
 
         setStage = () => {
             const {rowNum, colNum} = this;
@@ -164,7 +174,12 @@
         };
 
         loadNewModel = () => {
-            this.model = JSON.parse(JSON.stringify(models.S));
+            const shapes = Object.keys(models);
+            const cnt = Object.keys(models).length;
+            const num = Math.floor((Math.random()*cnt));
+            const shape = shapes[num];
+            log({shape})
+            this.model = JSON.parse(JSON.stringify(models[shape]));
             this.pos = this.getInitialPos();
             this.render();
         };
@@ -194,9 +209,16 @@
             const size = this.model.length;
             for (let i = 0; i < size; i++) {
                 for (let j = 0; j < size; j++) {
+                    const val = this.model[i][j];
+                    log({val})
                     const cell = document.querySelector(`[data-pos="${nextPos.row + i}-${nextPos.col + j}"]`)
-                    if (cell.classList.contains("border")) {
-                        return;
+                    if (val === 1) {
+                        if (cell.classList.contains("border") || cell.classList.contains("settled")) {
+                            if (direction === "down") {
+                                this.settle();
+                            }
+                            return;
+                        }
                     }
                 }
             }
@@ -232,8 +254,27 @@
         };
 
 
-        settle = () => {
+        checkRemoveRow = () => {
 
+        }
+
+
+        settle = () => {
+            log("----- render ------");
+            const cells = document.querySelectorAll(".cell");
+            const activeZone = this.loadActiveZone();
+            cells.forEach((cell) => {
+                const filled = activeZone.some((box) =>
+                    cell.dataset["pos"] === `${box.pos.row}-${box.pos.col}` && box.isFilled
+                );
+
+                cell.classList.remove("moving-box");
+
+                if (filled) {
+                    cell.classList.add("settled");
+                }
+            });
+            this.loadNewModel();
         };
 
         loadActiveZone = () => {
@@ -276,7 +317,7 @@
         };
     }
 
-    new Tetris();
+    new Tetris().start();
 
 </script>
 </html>
