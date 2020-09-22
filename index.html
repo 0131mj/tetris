@@ -137,31 +137,41 @@
             this.cnt = 0;
 //            const setCnt = window.setInterval(() => {
 //                this.movePos("down")
-//            }, 300)
+//            }, 1000)
         };
 
-        setStage = () => {
+        initMap = () => {
             const {rowNum, colNum} = this;
-            let cells = "";
+            const cells = [];
             for (let i = 0; i < rowNum; i++) {
-                cells += "<tr>";
+                cells[i] = [];
                 for (let j = 0; j < colNum; j++) {
-                    let val = 0;
-                    let className = "";
+                    cells[i][j] = {};
                     const isFirstCol = j === 0;
                     const isLastCol = j === colNum - 1;
                     const isLastRow = i === rowNum - 1;
                     if (isFirstCol || isLastCol || isLastRow) {
-                        val = 1;
-                        className = "border";
+                        cells[i][j]["type"] = "b";
                     } else {
-                        className = "cell";
+                        cells[i][j]["type"] = "c";
                     }
-                    cells += `<td class="${className}" data-pos="${i}-${j}">${i}-${j}</td>`;
                 }
-                cells += "</tr>";
             }
-            this.stage.innerHTML = cells;
+            this.map = cells;
+            return cells;
+        };
+
+        setStage = () => {
+            const map = this.initMap();
+            let cellDef = "";
+            map.forEach((row, i) => {
+                cellDef += "<tr>";
+                row.forEach((col, j) => {
+                    cellDef += `<td class="${col.type === "c" ? "cell" : "border"}" data-pos="${i}-${j}">${i}-${j}</td>`;
+                });
+                cellDef += "</tr>";
+            });
+            this.stage.innerHTML = cellDef;
         };
 
         getInitialPos = () => {
@@ -176,7 +186,7 @@
         loadNewModel = () => {
             const shapes = Object.keys(models);
             const cnt = Object.keys(models).length;
-            const num = Math.floor((Math.random()*cnt));
+            const num = Math.floor((Math.random() * cnt));
             const shape = shapes[num];
             log({shape})
             this.model = JSON.parse(JSON.stringify(models[shape]));
@@ -185,7 +195,6 @@
         };
 
         movePos = (direction) => {
-
             const nextPos = {
                 row: this.pos.row,
                 col: this.pos.col
@@ -211,7 +220,7 @@
                 for (let j = 0; j < size; j++) {
                     const val = this.model[i][j];
                     log({val})
-                    const cell = document.querySelector(`[data-pos="${nextPos.row + i}-${nextPos.col + j}"]`)
+                    const cell = document.querySelector(`[data-pos="${nextPos.row + i}-${nextPos.col + j}"]`);
                     if (val === 1) {
                         if (cell.classList.contains("border") || cell.classList.contains("settled")) {
                             if (direction === "down") {
@@ -253,10 +262,29 @@
             this.render();
         };
 
+        checkFinished = () => {
+            const settledCells = document.querySelectorAll(".settled");
+            for (const cell of settledCells) {
+                if (cell.dataset.pos.startsWith("0")) {
+                    return true;
+                }
+            }
+            return false;
+        };
 
-        checkRemoveRow = () => {
 
-        }
+        checkClearRow = () => {
+            const {colNum, rowNum} = this;
+            const clearRowIndex = [];
+            for (let i = 0; i < rowNum; i++) {
+                const allColumnFilled = () => {
+                    return false;
+                };
+                if (allColumnFilled()) {
+                    clearRowIndex.push(i);
+                }
+            }
+        };
 
 
         settle = () => {
@@ -274,7 +302,12 @@
                     cell.classList.add("settled");
                 }
             });
-            this.loadNewModel();
+            if (this.checkFinished()) {
+                window.alert("Finished !")
+                this.start();
+            } else {
+                this.loadNewModel();
+            }
         };
 
         loadActiveZone = () => {
