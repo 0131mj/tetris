@@ -167,15 +167,15 @@
 
         setStage = () => {
             const map = this.initMap();
-            let cellDef = "";
-            map.forEach((row, i) => {
-                cellDef += `<tr data-row='${i}'>`;
-                row.forEach((col, j) => {
-                    cellDef += `<td class="${col.type === "c" ? "cell" : "border"}" data-pos="${i}-${j}">${i}-${j}</td>`;
-                });
-                cellDef += "</tr>";
-            });
-            this.stage.innerHTML = cellDef;
+//            let cellDef = "";
+//            map.forEach((row, i) => {
+//                cellDef += `<tr data-row='${i}'>`;
+//                row.forEach((col, j) => {
+//                    cellDef += `<td class="${col.type === "c" ? "cell" : "border"}" data-pos="${i}-${j}">${i}-${j}</td>`;
+//                });
+//                cellDef += "</tr>";
+//            });
+//            this.stage.innerHTML = cellDef;
         };
 
         getInitialPos = () => {
@@ -219,22 +219,22 @@
 
 
             /** check movable **/
-            const size = this.model.length;
-            for (let i = 0; i < size; i++) {
-                for (let j = 0; j < size; j++) {
-                    const val = this.model[i][j];
-                    log({val})
-                    const cell = document.querySelector(`[data-pos="${nextPos.row + i}-${nextPos.col + j}"]`);
-                    if (val === 1) {
-                        if (cell.classList.contains("border") || cell.classList.contains("settled")) {
-                            if (direction === "down") {
-                                this.settle();
-                            }
-                            return;
-                        }
-                    }
-                }
-            }
+//            const size = this.model.length;
+//            for (let i = 0; i < size; i++) {
+//                for (let j = 0; j < size; j++) {
+//                    const val = this.model[i][j];
+//                    log({val})
+//                    const cell = document.querySelector(`[data-pos="${nextPos.row + i}-${nextPos.col + j}"]`);
+//                    if (val === 1) {
+//                        if (cell.classList.contains("border") || cell.classList.contains("settled")) {
+//                            if (direction === "down") {
+//                                this.settle();
+//                            }
+//                            return;
+//                        }
+//                    }
+//                }
+//            }
 
             this.pos = nextPos;
             this.render();
@@ -344,20 +344,34 @@
         };
 
         render = () => {
-            log("----- render ------")
-            const cells = document.querySelectorAll(".cell");
-            const activeZone = this.loadActiveZone();
-            cells.forEach((cell) => {
-                const filled = activeZone.some((box) =>
-                    cell.dataset["pos"] === `${box.pos.row}-${box.pos.col}` && box.isFilled
-                );
 
-                if (filled) {
-                    cell.classList.add("moving-box");
-                } else {
-                    cell.classList.remove("moving-box");
-                }
+            let result = "<tbody>";
+            this.map.forEach((row, rowIdx) => {
+                result += "<tr>";
+                row.forEach((col, colIdx) => {
+                    const isPos = colIdx === this.pos.col && rowIdx === this.pos.row;
+                    result += `<td style="background-color: ${col.type === 'c' ? '#fafafa' : 'darkgrey'}; color:${isPos ? '#ff0000' : 'grey'}">${rowIdx}-${colIdx}</td>`
+                });
+                result += "</tr>";
             });
+            result += "</tbody>";
+            log(this.pos);
+
+            document.getElementById("stage").innerHTML = result;
+
+//            const blocks = document.querySelectorAll("td");
+//            const activeZone = this.loadActiveZone();
+//            blocks.forEach((block) => {
+//                const filled = activeZone.some((box) =>
+//                    block.dataset["pos"] === `${box.pos.row}-${box.pos.col}` && box.isFilled
+//                );
+//
+//                if (filled) {
+//                    block.classList.add("moving-box");
+//                } else {
+//                    block.classList.remove("moving-box");
+//                }
+//            });
         };
     }
 
