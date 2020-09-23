@@ -39,6 +39,10 @@
             background-color: #999;
         }
 
+        .remove {
+            background-color: red !important;
+        }
+
         #log {
             background-color: black;
             position: fixed;
@@ -165,7 +169,7 @@
             const map = this.initMap();
             let cellDef = "";
             map.forEach((row, i) => {
-                cellDef += "<tr>";
+                cellDef += `<tr data-row='${i}'>`;
                 row.forEach((col, j) => {
                     cellDef += `<td class="${col.type === "c" ? "cell" : "border"}" data-pos="${i}-${j}">${i}-${j}</td>`;
                 });
@@ -276,14 +280,20 @@
         checkClearRow = () => {
             const {colNum, rowNum} = this;
             const clearRowIndex = [];
-            for (let i = 0; i < rowNum; i++) {
-                const allColumnFilled = () => {
-                    return false;
-                };
-                if (allColumnFilled()) {
+            for (let i = 0; i < rowNum - 1; i++) {
+                const row = document.querySelector(`[data-row="${i}"]`);
+                const cols = Array.from(row.cells);
+                const allColumnSettled = cols.filter(col => col.classList.contains("cell")).every(col => col.classList.contains("settled"));
+                if (allColumnSettled) {
                     clearRowIndex.push(i);
                 }
             }
+            clearRowIndex.forEach((i) => {
+                const row = document.querySelector(`[data-row="${i}"]`);
+                const cols = Array.from(row.cells);
+                cols.filter(col => col.classList.contains("cell")).forEach(col => col.classList.add("remove"))
+            });
+            console.log(clearRowIndex.length > 0 ? "REMOVE" : "None");
         };
 
 
@@ -302,6 +312,7 @@
                     cell.classList.add("settled");
                 }
             });
+            this.checkClearRow();
             if (this.checkFinished()) {
                 window.alert("Finished !")
                 this.start();
