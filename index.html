@@ -218,10 +218,11 @@
             }
 
 
+            console.log(this.map);
             /** check movable **/
-//            const size = this.model.length;
-//            for (let i = 0; i < size; i++) {
-//                for (let j = 0; j < size; j++) {
+            const size = this.model.length;
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
 //                    const val = this.model[i][j];
 //                    log({val})
 //                    const cell = document.querySelector(`[data-pos="${nextPos.row + i}-${nextPos.col + j}"]`);
@@ -233,8 +234,8 @@
 //                            return;
 //                        }
 //                    }
-//                }
-//            }
+                }
+            }
 
             this.pos = nextPos;
             this.render();
@@ -344,13 +345,41 @@
         };
 
         render = () => {
+            log({pos: this.pos});
+            log({model: this.model});
+            const activeCells = this.model.reduce((sets, row, rowIndex) => {
+                const data = row.reduce((set, col, colIndex) => {
+                    const activeRow = rowIndex + this.pos.row;
+                    const activeCol = colIndex + this.pos.col;
+                    log(`${activeRow}-${activeCol}=${col}`);
+                    if (col === 1) {
+                        set.push([activeRow, activeCol]);
+                    }
+                    return set;
+                }, []);
+                log({data});
+                sets.push(...data);
+                return sets;
+            }, []);
 
+            log({activeCells});
             let result = "<tbody>";
             this.map.forEach((row, rowIdx) => {
                 result += "<tr>";
                 row.forEach((col, colIdx) => {
                     const isPos = colIdx === this.pos.col && rowIdx === this.pos.row;
-                    result += `<td style="background-color: ${col.type === 'c' ? '#fafafa' : 'darkgrey'}; color:${isPos ? '#ff0000' : 'grey'}">${rowIdx}-${colIdx}</td>`
+                    const isActiveCell = activeCells.some(cell => {
+                        return cell[0]===rowIdx && cell[1]===colIdx;
+                    });
+                    result += `
+                        <td
+                            style="
+                            color:${isPos ? '#ff0000' : 'grey'};
+                            border:${isActiveCell ? '1px solid red' : '1px solid transparent'};
+                            background-color: ${col.type === 'c' ? '#fafafa' : 'darkgrey'}"
+                        >
+                            ${rowIdx}-${colIdx}
+                        </td>`
                 });
                 result += "</tr>";
             });
