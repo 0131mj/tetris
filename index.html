@@ -68,8 +68,8 @@
     /** Shapes **/
     const models = {
         T: [
+            [0, 0, 0],
             [1, 1, 1],
-            [0, 1, 0],
             [0, 1, 0],
         ],
         I: [
@@ -84,13 +84,13 @@
         ],
         Z: [
             [1, 1, 0],
-            [0, 1, 0],
             [0, 1, 1],
+            [0, 0, 0],
         ],
         S: [
             [0, 1, 1],
-            [0, 1, 0],
-            [1, 1, 0]
+            [1, 1, 0],
+            [0, 0, 0]
         ],
         L: [
             [0, 1, 0],
@@ -139,9 +139,9 @@
             this.setStage();
             this.loadNewModel();
             this.cnt = 0;
-//            const setCnt = window.setInterval(() => {
-//                this.movePos("down")
-//            }, 1000)
+            const setCnt = window.setInterval(() => {
+                this.movePos("down")
+            }, 1000)
         };
 
         initMap = () => {
@@ -265,13 +265,14 @@
         };
 
         checkFinished = () => {
-            const settledCells = document.querySelectorAll(".settled");
-            for (const cell of settledCells) {
-                if (cell.dataset.pos.startsWith("0")) {
-                    return true;
-                }
-            }
-            return false;
+            return this.map[0].some(col => col.type === "d");
+//            const settledCells = document.querySelectorAll(".settled");
+//            for (const cell of settledCells) {
+//                if (cell.dataset.pos.startsWith("0")) {
+//                    return true;
+//                }
+//            }
+//            return false;
         };
 
         clearRow = (indexes) => {
@@ -281,7 +282,18 @@
                     return row
                 }
             });
-            console.log("clear", this.map, clearedMap)
+            console.log("clear", this.map, clearedMap);
+            const blankRows = [];
+            for (let i = 0; i < indexes.length; i++) {
+                blankRows[i] = [];
+                for (let j = 0; j < colNum; j++) {
+                    const type = j === 0 || j === colNum - 1 ? "b" : "c";
+                    blankRows[i][j] = {type};
+                }
+            }
+            this.map = blankRows.concat(clearedMap);
+            this.loadNewModel();
+            this.render();
         };
 
         checkClearRow = () => {
@@ -329,6 +341,12 @@
             });
 
             this.checkClearRow();
+            if (this.checkFinished()) {
+                window.alert("Finished !")
+                this.start();
+            }
+
+
 //            const cells = document.querySelectorAll(".cell");
 //            const activeZone = this.loadActiveZone();
 //            cells.forEach((cell) => {
