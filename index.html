@@ -62,7 +62,7 @@
 </body>
 <script>
     const log = (msg) => {
-        document.getElementById("log").innerHTML = `${JSON.stringify(msg)}<br/>` + document.getElementById("log").innerHTML;
+//        document.getElementById("log").innerHTML = `${JSON.stringify(msg)}<br/>` + document.getElementById("log").innerHTML;
     };
 
     /** Shapes **/
@@ -218,28 +218,25 @@
             }
 
 
-            console.log(this.map);
+            const nextActiveCells = this.getActiveCells(nextPos);
+            console.log(nextActiveCells);
             /** check movable **/
-            const size = this.model.length;
-            for (let i = 0; i < size; i++) {
-                for (let j = 0; j < size; j++) {
-//                    const val = this.model[i][j];
-//                    log({val})
-//                    const cell = document.querySelector(`[data-pos="${nextPos.row + i}-${nextPos.col + j}"]`);
-//                    if (val === 1) {
-//                        if (cell.classList.contains("border") || cell.classList.contains("settled")) {
-//                            if (direction === "down") {
-//                                this.settle();
-//                            }
-//                            return;
-//                        }
-//                    }
+            const willOverlap = nextActiveCells.some((cell) => {
+                const row = cell[0];
+                const col = cell[1];
+                return this.map[row][col].type === "b" || this.map[row][col].type === "d";
+            });
+
+
+            if (willOverlap) {
+                const willSettle = willOverlap && direction === "down";
+                if (willSettle) {
+                    this.settle();
                 }
+            } else {
+                this.pos = nextPos;
+                this.render();
             }
-
-            this.pos = nextPos;
-            this.render();
-
         };
 
         /** Rotate Model **/
@@ -277,49 +274,81 @@
             return false;
         };
 
-
-        checkClearRow = () => {
-            const {colNum, rowNum} = this;
-            const clearRowIndex = [];
-            for (let i = 0; i < rowNum - 1; i++) {
-                const row = document.querySelector(`[data-row="${i}"]`);
-                const cols = Array.from(row.cells);
-                const allColumnSettled = cols.filter(col => col.classList.contains("cell")).every(col => col.classList.contains("settled"));
-                if (allColumnSettled) {
-                    clearRowIndex.push(i);
+        clearRow = (indexes) => {
+            const {colNum} = this;
+            const clearedMap = this.map.filter((row, idx) => {
+                if (!indexes.includes(idx)) {
+                    return row
                 }
-            }
-            clearRowIndex.forEach((i) => {
-                const row = document.querySelector(`[data-row="${i}"]`);
-                const cols = Array.from(row.cells);
-                cols.filter(col => col.classList.contains("cell")).forEach(col => col.classList.add("remove"))
             });
-            console.log(clearRowIndex.length > 0 ? "REMOVE" : "None");
+            console.log("clear", this.map, clearedMap)
         };
 
-
-        settle = () => {
-            log("----- render ------");
-            const cells = document.querySelectorAll(".cell");
-            const activeZone = this.loadActiveZone();
-            cells.forEach((cell) => {
-                const filled = activeZone.some((box) =>
-                    cell.dataset["pos"] === `${box.pos.row}-${box.pos.col}` && box.isFilled
-                );
-
-                cell.classList.remove("moving-box");
-
-                if (filled) {
-                    cell.classList.add("settled");
+        checkClearRow = () => {
+            const clearRowIndex = [];
+            this.map.forEach((row, rowIdx) => {
+                if (rowIdx === this.map.length - 1) {
+                    return;
+                }
+                const isFilled = row.every(col => col.type === "b" || col.type === "d");
+                if (isFilled) {
+                    clearRowIndex.push(rowIdx);
                 }
             });
-            this.checkClearRow();
-            if (this.checkFinished()) {
-                window.alert("Finished !")
-                this.start();
+            if (clearRowIndex.length > 0) {
+                this.clearRow(clearRowIndex);
             } else {
                 this.loadNewModel();
             }
+            console.log({clearRowIndex});
+
+//            for (let i = 0; i < rowNum - 1; i++) {
+//                const row = document.querySelector(`[data-row="${i}"]`);
+//                const cols = Array.from(row.cells);
+//                const allColumnSettled = cols.filter(col => col.classList.contains("cell")).every(col => col.classList.contains("settled"));
+//                if (allColumnSettled) {
+//                    clearRowIndex.push(i);
+//                }
+//            }
+//            clearRowIndex.forEach((i) => {
+//                const row = document.querySelector(`[data-row="${i}"]`);
+//                const cols = Array.from(row.cells);
+//                cols.filter(col => col.classList.contains("cell")).forEach(col => col.classList.add("remove"))
+//            });
+//            console.log(clearRowIndex.length > 0 ? "REMOVE" : "None");
+
+        };
+
+        settle = () => {
+            log("----- render ------");
+            const activeCells = this.getActiveCells(this.pos);
+            activeCells.forEach(cell => {
+                const row = cell[0];
+                const col = cell[1];
+                this.map[row][col].type = "d";
+            });
+
+            this.checkClearRow();
+//            const cells = document.querySelectorAll(".cell");
+//            const activeZone = this.loadActiveZone();
+//            cells.forEach((cell) => {
+//                const filled = activeZone.some((box) =>
+//                    cell.dataset["pos"] === `${box.pos.row}-${box.pos.col}` && box.isFilled
+//                );
+//
+//                cell.classList.remove("moving-box");
+//
+//                if (filled) {
+//                    cell.classList.add("settled");
+//                }
+//            });
+//            this.checkClearRow();
+//            if (this.checkFinished()) {
+//                window.alert("Finished !")
+//                this.start();
+//            } else {
+//                this.loadNewModel();
+//            }
         };
 
         loadActiveZone = () => {
@@ -344,13 +373,12 @@
             return activeZone;
         };
 
-        render = () => {
-            log({pos: this.pos});
-            log({model: this.model});
-            const activeCells = this.model.reduce((sets, row, rowIndex) => {
+        getActiveCells = (pos) => {
+            const {row: rowPos, col: colPos} = pos;
+            return this.model.reduce((sets, row, rowIndex) => {
                 const data = row.reduce((set, col, colIndex) => {
-                    const activeRow = rowIndex + this.pos.row;
-                    const activeCol = colIndex + this.pos.col;
+                    const activeRow = rowIndex + rowPos;
+                    const activeCol = colIndex + colPos;
                     log(`${activeRow}-${activeCol}=${col}`);
                     if (col === 1) {
                         set.push([activeRow, activeCol]);
@@ -361,6 +389,12 @@
                 sets.push(...data);
                 return sets;
             }, []);
+        };
+
+        render = () => {
+            log({pos: this.pos});
+            log({model: this.model});
+            const activeCells = this.getActiveCells(this.pos);
 
             log({activeCells});
             let result = "<tbody>";
@@ -369,14 +403,14 @@
                 row.forEach((col, colIdx) => {
                     const isPos = colIdx === this.pos.col && rowIdx === this.pos.row;
                     const isActiveCell = activeCells.some(cell => {
-                        return cell[0]===rowIdx && cell[1]===colIdx;
+                        return cell[0] === rowIdx && cell[1] === colIdx;
                     });
                     result += `
                         <td
                             style="
                             color:${isPos ? '#ff0000' : 'grey'};
                             border:${isActiveCell ? '1px solid red' : '1px solid transparent'};
-                            background-color: ${col.type === 'c' ? '#fafafa' : 'darkgrey'}"
+                            background-color: ${col.type === 'c' ? '#fafafa' : (col.type === 'd' ? 'darkgrey' : '#555')}"
                         >
                             ${rowIdx}-${colIdx}
                         </td>`
