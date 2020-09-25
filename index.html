@@ -9,9 +9,11 @@
     <style>
         html {
             height: 100%;
+            margin: 0;
         }
 
         body {
+            margin: 0;
             color: #ccc;
             display: flex;
             justify-content: center;
@@ -19,51 +21,103 @@
             height: 100%;
         }
 
-        .border {
-            color: transparent;
-            background-color: gray;
+        #stage {
+            margin: 0 100px 0 150px;
+            position: relative;
+        }
+
+        #stage::before {
+            content: "TETRIS";
+            width: 100%;
+            font-size: 30px;
+            position: absolute;
+            text-align: center;
+            top: 20px;
+            letter-spacing: 1.2rem;
+            margin-left: 1.2rem;
         }
 
         td {
-            width: 45px;
-            height: 45px;
+            font-size: 12px;
+            width: 30px;
+            height: 30px;
             user-select: none;
             text-align: center;
         }
 
-        .moving-box {
-            background-color: #eee;
+        .info {
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+            width: 160px;
         }
 
-        .settled {
-            background-color: #999;
+        #state {
+            font-size: 20px;
+            margin-bottom: 60px;
+            color: darkgray;
         }
 
-        .remove {
-            background-color: red !important;
+        .playing {
+            color: lightgray !important;
+            font-style: italic;
         }
 
-        #log {
-            background-color: black;
-            position: fixed;
-            right: 0;
-            top: 0;
-            padding: 10px;
-            color: chartreuse;
-            width: 400px;
-            overflow: auto;
-            height: 100vh;
+        #key-map-title {
+            width: 100%;
+            text-align: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        dl {
+            display: flex;
+            width: 100%;
+            flex-wrap: wrap;
+            line-height: 2rem;
+        }
+
+        dt {
+            width: 70px;
+            text-align: center;
+        }
+
+        dd {
+            width: calc(100% - 70px);
+            margin: 0;
         }
     </style>
 </head>
 <body>
 <table id="stage"></table>
-<div id="log"></div>
+<div class="info">
+    <div id="state" class="playing">PLAYING</div>
+    <div id="key-map-title">
+        Key Map
+    </div>
+    <dl>
+        <dt>↑</dt>
+        <dd>Rotate</dd>
+
+        <dt>→</dt>
+        <dd>Right</dd>
+
+        <dt>←</dt>
+        <dd>Left</dd>
+
+        <dt>↓</dt>
+        <dd>Down</dd>
+
+        <dt>Space</dt>
+        <dd>Drop Down</dd>
+
+        <dt>Esc</dt>
+        <dd>Play/Pause</dd>
+    </dl>
+</div>
+
 </body>
 <script>
-    const log = (msg) => {
-//        document.getElementById("log").innerHTML = `${JSON.stringify(msg)}<br/>` + document.getElementById("log").innerHTML;
-    };
 
     /** Shapes **/
     const models = {
@@ -107,9 +161,10 @@
     class Tetris {
         /** Stage **/
         constructor() {
+            this.setPlaying = null;
             this.pause = false;
-            this.colNum = 15;
-            this.rowNum = 15;
+            this.colNum = 12;
+            this.rowNum = 22;
             /** KeyMap **/
             window.addEventListener('keydown', (event) => {
                 const key = event.keyCode;
@@ -130,16 +185,35 @@
                     case 40 :
                         this.movePos("down");
                         break;
+
+                    case 32 :
+                        this.dropDown();
+                        break;
+
+                    case 27 :
+                        this.togglePause();
+                        break;
                 }
             });
         }
+
+        togglePause = () => {
+            this.pause = !this.pause;
+            const state = document.getElementById("state");
+            state.innerText = this.pause ? "PAUSED" : "PLAYING";
+            if (this.pause) {
+                state.classList.remove("playing")
+            } else {
+                state.classList.add("playing")
+            }
+        };
 
         start = () => {
             this.setStage();
             this.loadNewModel();
             this.cnt = 0;
-            const setCnt = window.setInterval(() => {
-                this.movePos("down")
+            this.setPlaying = setInterval(() => {
+                this.movePos("down");
             }, 1500)
         };
 
@@ -165,14 +239,30 @@
         };
 
         setStage = () => {
-            const map = this.initMap();
+            this.initMap();
+        };
+
+        getLastFilledIndex = () => {
+            if (this.model) {
+                const size = this.model.length;
+                for (let i = size - 1; i > -1; i--) {
+                    const row = this.model[i];
+                    const isFilled = row.some(col => col === 1);
+                    if (isFilled) {
+                        return i;
+                    }
+                }
+            }
         };
 
         getInitialPos = () => {
+            const hiddenHeight = 3;
             const size = this.model.length;
             const col = Math.round((this.colNum - size) / 2);
+            const lastFilledRowIndex = this.getLastFilledIndex();
+            const row = hiddenHeight - lastFilledRowIndex;
             return ({
-                row: 0,
+                row,
                 col,
             });
         };
@@ -182,10 +272,22 @@
             const cnt = Object.keys(models).length;
             const num = Math.floor((Math.random() * cnt));
             const shape = shapes[num];
-            log({shape})
             this.model = JSON.parse(JSON.stringify(models[shape]));
             this.pos = this.getInitialPos();
             this.render();
+        };
+
+        dropDown = () => {
+            if (this.pause) {
+                return false;
+            }
+            let settled = false;
+            while (!settled) {
+                const isSettled = this.movePos("down");
+                if (isSettled) {
+                    settled = true;
+                }
+            }
         };
 
         movePos = (direction) => {
@@ -210,7 +312,6 @@
                     break;
             }
 
-
             /** check movable **/
             const nextActiveCells = this.getActiveCells(nextPos);
             const willOverlap = nextActiveCells.some((cell) => {
@@ -219,16 +320,18 @@
                 return this.map[row][col].type === "b" || this.map[row][col].type === "d";
             });
 
-
+            let isSettled = false;
             if (willOverlap) {
                 const willSettle = willOverlap && direction === "down";
                 if (willSettle) {
                     this.settle();
+                    isSettled = true;
                 }
             } else {
                 this.pos = nextPos;
                 this.render();
             }
+            return isSettled;
         };
 
         /** Rotate Model **/
@@ -237,7 +340,6 @@
                 return false;
             }
 
-            log(this.model);
             const size = this.model.length;
             const nextModel = [];
             for (let i = 0; i < size; i++) {
@@ -257,23 +359,20 @@
             });
 
 
-            log({nextModel});
-            log('Rotate');
-
             if (!willOverlap) {
                 this.model = nextModel;
                 this.render();
             }
         };
 
-        checkGameOver = () => this.map[0].some(col => col.type === "d");
+        checkGameOver = () => this.map[3].some(col => col.type === "d");
 
         clearRow = (indexes) => {
             indexes.forEach(index => {
                 const row = this.map[index];
                 row.forEach(col => {
                     if (col.type !== "b") {
-                        col.type = "x";
+                        col.type = "e";
                     }
                 })
             });
@@ -288,7 +387,7 @@
                         return row
                     }
                 });
-                console.log("clear", this.map, clearedMap);
+
                 const blankRows = [];
                 for (let i = 0; i < indexes.length; i++) {
                     blankRows[i] = [];
@@ -323,11 +422,11 @@
                     this.pause = false;
                 }, 200)
             }
-            console.log({clearRowIndex});
+
         };
 
         settle = () => {
-            log("----- render ------");
+
             const activeCells = this.getActiveCells(this.pos);
             activeCells.forEach(cell => {
                 const row = cell[0];
@@ -337,7 +436,12 @@
 
             this.checkClearRow();
             if (this.checkGameOver()) {
+
                 window.alert("GAME OVER !");
+                if (this.setPlaying !== null) {
+                    window.clearInterval(this.setPlaying);
+                    this.setPlaying = null;
+                }
                 this.start();
             }
 
@@ -352,13 +456,11 @@
                 const data = row.reduce((set, col, colIndex) => {
                     const activeRow = rowIndex + rowPos;
                     const activeCol = colIndex + colPos;
-                    log(`${activeRow}-${activeCol}=${col}`);
                     if (col === 1) {
                         set.push([activeRow, activeCol]);
                     }
                     return set;
                 }, []);
-                log({data});
                 sets.push(...data);
                 return sets;
             }, []);
@@ -370,27 +472,25 @@
                 "b": "#555",
                 "c": "#fafafa",
                 "d": "darkgrey",
-                "x": "red",
+                "e": "darkred",
             };
             return blockColor[blockType];
         };
 
         render = () => {
-            log({pos: this.pos});
-            log({model: this.model});
             const activeCells = this.getActiveCells(this.pos);
 
             let result = "<tbody>";
             this.map.forEach((row, rowIdx) => {
                 result += "<tr>";
                 row.forEach((col, colIdx) => {
-                    const isPos = colIdx === this.pos.col && rowIdx === this.pos.row;
                     const isActiveCell = col.type !== "d" && activeCells.some(cell => cell[0] === rowIdx && cell[1] === colIdx);
                     const bgColor = this.getBlockColor(isActiveCell ? "a" : col.type);
                     result += `
                         <td
                             style="
-                            color:${isPos ? '#ff0000' : 'grey'};
+                            opacity:${rowIdx > 2 ? 1 : 0};
+                            color:${'transparent'};
                             background-color: ${bgColor}"
                         >
                             ${rowIdx}-${colIdx}
@@ -399,7 +499,6 @@
                 result += "</tr>";
             });
             result += "</tbody>";
-            log(this.pos);
             document.getElementById("stage").innerHTML = result;
         };
     }
