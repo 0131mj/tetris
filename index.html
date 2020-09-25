@@ -107,10 +107,9 @@
     class Tetris {
         /** Stage **/
         constructor() {
-            this.stage = document.getElementById("stage");
+            this.pause = false;
             this.colNum = 15;
             this.rowNum = 15;
-
             /** KeyMap **/
             window.addEventListener('keydown', (event) => {
                 const key = event.keyCode;
@@ -141,7 +140,7 @@
             this.cnt = 0;
             const setCnt = window.setInterval(() => {
                 this.movePos("down")
-            }, 1000)
+            }, 1500)
         };
 
         initMap = () => {
@@ -167,15 +166,6 @@
 
         setStage = () => {
             const map = this.initMap();
-//            let cellDef = "";
-//            map.forEach((row, i) => {
-//                cellDef += `<tr data-row='${i}'>`;
-//                row.forEach((col, j) => {
-//                    cellDef += `<td class="${col.type === "c" ? "cell" : "border"}" data-pos="${i}-${j}">${i}-${j}</td>`;
-//                });
-//                cellDef += "</tr>";
-//            });
-//            this.stage.innerHTML = cellDef;
         };
 
         getInitialPos = () => {
@@ -199,6 +189,9 @@
         };
 
         movePos = (direction) => {
+            if (this.pause) {
+                return false;
+            }
             const nextPos = {
                 row: this.pos.row,
                 col: this.pos.col
@@ -218,9 +211,8 @@
             }
 
 
-            const nextActiveCells = this.getActiveCells(nextPos);
-            console.log(nextActiveCells);
             /** check movable **/
+            const nextActiveCells = this.getActiveCells(nextPos);
             const willOverlap = nextActiveCells.some((cell) => {
                 const row = cell[0];
                 const col = cell[1];
@@ -241,9 +233,9 @@
 
         /** Rotate Model **/
         rotateModel = () => {
-            const isRotatable = () => {
-                return true;
-            };
+            if (this.pause) {
+                return false;
+            }
 
             log(this.model);
             const size = this.model.length;
@@ -257,43 +249,58 @@
                 })
             });
 
+            const nextActiveCells = this.getActiveCells(this.pos, nextModel);
+            const willOverlap = nextActiveCells.some((cell) => {
+                const row = cell[0];
+                const col = cell[1];
+                return this.map[row][col].type === "b" || this.map[row][col].type === "d";
+            });
+
 
             log({nextModel});
             log('Rotate');
-            this.model = nextModel;
-            this.render();
+
+            if (!willOverlap) {
+                this.model = nextModel;
+                this.render();
+            }
         };
 
-        checkFinished = () => {
-            return this.map[0].some(col => col.type === "d");
-//            const settledCells = document.querySelectorAll(".settled");
-//            for (const cell of settledCells) {
-//                if (cell.dataset.pos.startsWith("0")) {
-//                    return true;
-//                }
-//            }
-//            return false;
-        };
+        checkGameOver = () => this.map[0].some(col => col.type === "d");
 
         clearRow = (indexes) => {
-            const {colNum} = this;
-            const clearedMap = this.map.filter((row, idx) => {
-                if (!indexes.includes(idx)) {
-                    return row
-                }
+            indexes.forEach(index => {
+                const row = this.map[index];
+                row.forEach(col => {
+                    if (col.type !== "b") {
+                        col.type = "x";
+                    }
+                })
             });
-            console.log("clear", this.map, clearedMap);
-            const blankRows = [];
-            for (let i = 0; i < indexes.length; i++) {
-                blankRows[i] = [];
-                for (let j = 0; j < colNum; j++) {
-                    const type = j === 0 || j === colNum - 1 ? "b" : "c";
-                    blankRows[i][j] = {type};
-                }
-            }
-            this.map = blankRows.concat(clearedMap);
-            this.loadNewModel();
+            this.model = null;
+            this.pause = true;
             this.render();
+            setTimeout(() => {
+                this.pause = false;
+                const {colNum} = this;
+                const clearedMap = this.map.filter((row, idx) => {
+                    if (!indexes.includes(idx)) {
+                        return row
+                    }
+                });
+                console.log("clear", this.map, clearedMap);
+                const blankRows = [];
+                for (let i = 0; i < indexes.length; i++) {
+                    blankRows[i] = [];
+                    for (let j = 0; j < colNum; j++) {
+                        const type = j === 0 || j === colNum - 1 ? "b" : "c";
+                        blankRows[i][j] = {type};
+                    }
+                }
+                this.map = blankRows.concat(clearedMap);
+                this.loadNewModel();
+                this.render();
+            }, 200);
         };
 
         checkClearRow = () => {
@@ -311,24 +318,12 @@
                 this.clearRow(clearRowIndex);
             } else {
                 this.loadNewModel();
+                this.pause = true;
+                setTimeout(() => {
+                    this.pause = false;
+                }, 200)
             }
             console.log({clearRowIndex});
-
-//            for (let i = 0; i < rowNum - 1; i++) {
-//                const row = document.querySelector(`[data-row="${i}"]`);
-//                const cols = Array.from(row.cells);
-//                const allColumnSettled = cols.filter(col => col.classList.contains("cell")).every(col => col.classList.contains("settled"));
-//                if (allColumnSettled) {
-//                    clearRowIndex.push(i);
-//                }
-//            }
-//            clearRowIndex.forEach((i) => {
-//                const row = document.querySelector(`[data-row="${i}"]`);
-//                const cols = Array.from(row.cells);
-//                cols.filter(col => col.classList.contains("cell")).forEach(col => col.classList.add("remove"))
-//            });
-//            console.log(clearRowIndex.length > 0 ? "REMOVE" : "None");
-
         };
 
         settle = () => {
@@ -341,59 +336,19 @@
             });
 
             this.checkClearRow();
-            if (this.checkFinished()) {
-                window.alert("Finished !")
+            if (this.checkGameOver()) {
+                window.alert("GAME OVER !");
                 this.start();
             }
 
-
-//            const cells = document.querySelectorAll(".cell");
-//            const activeZone = this.loadActiveZone();
-//            cells.forEach((cell) => {
-//                const filled = activeZone.some((box) =>
-//                    cell.dataset["pos"] === `${box.pos.row}-${box.pos.col}` && box.isFilled
-//                );
-//
-//                cell.classList.remove("moving-box");
-//
-//                if (filled) {
-//                    cell.classList.add("settled");
-//                }
-//            });
-//            this.checkClearRow();
-//            if (this.checkFinished()) {
-//                window.alert("Finished !")
-//                this.start();
-//            } else {
-//                this.loadNewModel();
-//            }
         };
 
-        loadActiveZone = () => {
-            const size = this.model.length;
-            log({size});
-
-            let activeZone = [];
-            for (let i = 0; i < size; i++) {
-                for (let j = 0; j < size; j++) {
-                    const isFilled = this.model[i][j] === 1;
-                    activeZone.push(
-                        {
-                            pos: {
-                                row: i + this.pos.row,
-                                col: j + this.pos.col
-                            },
-                            isFilled: isFilled
-                        }
-                    );
-                }
+        getActiveCells = (pos = this.pos, model = this.model) => {
+            if (!this.model) {
+                return [];
             }
-            return activeZone;
-        };
-
-        getActiveCells = (pos) => {
             const {row: rowPos, col: colPos} = pos;
-            return this.model.reduce((sets, row, rowIndex) => {
+            return model.reduce((sets, row, rowIndex) => {
                 const data = row.reduce((set, col, colIndex) => {
                     const activeRow = rowIndex + rowPos;
                     const activeCol = colIndex + colPos;
@@ -409,26 +364,34 @@
             }, []);
         };
 
+        getBlockColor = (blockType) => {
+            const blockColor = {
+                "a": "skyblue",
+                "b": "#555",
+                "c": "#fafafa",
+                "d": "darkgrey",
+                "x": "red",
+            };
+            return blockColor[blockType];
+        };
+
         render = () => {
             log({pos: this.pos});
             log({model: this.model});
             const activeCells = this.getActiveCells(this.pos);
 
-            log({activeCells});
             let result = "<tbody>";
             this.map.forEach((row, rowIdx) => {
                 result += "<tr>";
                 row.forEach((col, colIdx) => {
                     const isPos = colIdx === this.pos.col && rowIdx === this.pos.row;
-                    const isActiveCell = activeCells.some(cell => {
-                        return cell[0] === rowIdx && cell[1] === colIdx;
-                    });
+                    const isActiveCell = col.type !== "d" && activeCells.some(cell => cell[0] === rowIdx && cell[1] === colIdx);
+                    const bgColor = this.getBlockColor(isActiveCell ? "a" : col.type);
                     result += `
                         <td
                             style="
                             color:${isPos ? '#ff0000' : 'grey'};
-                            border:${isActiveCell ? '1px solid red' : '1px solid transparent'};
-                            background-color: ${col.type === 'c' ? '#fafafa' : (col.type === 'd' ? 'darkgrey' : '#555')}"
+                            background-color: ${bgColor}"
                         >
                             ${rowIdx}-${colIdx}
                         </td>`
@@ -437,22 +400,7 @@
             });
             result += "</tbody>";
             log(this.pos);
-
             document.getElementById("stage").innerHTML = result;
-
-//            const blocks = document.querySelectorAll("td");
-//            const activeZone = this.loadActiveZone();
-//            blocks.forEach((block) => {
-//                const filled = activeZone.some((box) =>
-//                    block.dataset["pos"] === `${box.pos.row}-${box.pos.col}` && box.isFilled
-//                );
-//
-//                if (filled) {
-//                    block.classList.add("moving-box");
-//                } else {
-//                    block.classList.remove("moving-box");
-//                }
-//            });
         };
     }
 
